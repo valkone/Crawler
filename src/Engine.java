@@ -17,7 +17,7 @@ public class Engine {
 
         Map<String, String> result = new HashMap<>();
         result.put("command", command);
-        result.put("arguments", arguments);
+        result.put("parameters", arguments);
 
         return result;
     }
@@ -28,9 +28,24 @@ public class Engine {
                 Program.isRunning = false;
                 break;
 
+            case "crawl":
+                String[] parameters = parametersParser(input.get("parameters"));
+                try {
+                    Crawler.craw(parameters[0]);
+                } catch(IllegalArgumentException e) {
+                    System.out.println(e.getMessage());
+                }
+                break;
+
             default:
                 System.out.println("Invalid command!");
                 break;
         }
+    }
+
+    private static String[] parametersParser(String parameters) {
+        String[] parsedParameters = parameters.split(" ");
+
+        return parsedParameters;
     }
 }
