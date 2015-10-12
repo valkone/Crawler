@@ -2,6 +2,7 @@ import com.sun.deploy.net.HttpResponse;
 import sun.net.www.http.HttpClient;
 
 import java.io.BufferedReader;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -11,7 +12,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,7 +28,7 @@ public class Crawler {
     public static void craw(String url) throws IllegalArgumentException {
         Connection connection = Database.connection();
 
-        Pattern pattern = Pattern.compile("((?!w+\\.)[a-zA-Z]+(\\.[a-z-A-Z]+)+.*)");
+        Pattern pattern = Pattern.compile("((?!w+\\.)[a-zA-Z0-9-]+(\\.[a-z-A-Z0-9-]+)+.*)");
         Matcher match = pattern.matcher(url);
 
         if(!match.find()) {
@@ -39,12 +42,32 @@ public class Crawler {
             rs = stmt.executeQuery(checkIfUrlIsCrawled);
 
             if(rs.getInt("row_count") == 0) {
+                String urlContent = getUrlContent(url);
+                String insertDataSql = MessageFormat.format("INSERT INTO crawled_data(content, url)" +
+                        "VALUES('{0}', '{1}')", urlContent, url);
+                // TODO: Insert data into database
 
+                List<String> allUrls = getAllUrls(urlContent);
+                // TODO: recursive crawling all urls
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
 
+    }
+
+    private static List<String> getAllUrls(String content) {
+        List<String> allUrls = new ArrayList<>();
+
+        Pattern urlMatch = Pattern.compile("(href|src)=('|\")((http://|https://|www)(www)*[^'\"]+)");
+        Matcher urls = urlMatch.matcher(content);
+        while (urls.find()) {
+            allUrls.add(urls.group(3));
+        }
+
+        return allUrls;
     }
 
     private static String getUrlContent(String url) throws IOException {
