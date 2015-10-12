@@ -25,17 +25,11 @@ public class Crawler {
     public static void craw(String url) throws IllegalArgumentException {
         Connection connection = Database.connection();
 
-        try {
-            Crawler.getUrlContent(url);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-
-        /*Pattern pattern = Pattern.compile("((?!w+\\.)[a-zA-Z]+(\\.[a-z-A-Z]+)+.*)");
+        Pattern pattern = Pattern.compile("((?!w+\\.)[a-zA-Z]+(\\.[a-z-A-Z]+)+.*)");
         Matcher match = pattern.matcher(url);
 
         if(!match.find()) {
-            throw new IllegalArgumentException("Invalid url");
+            throw new IllegalArgumentException(url + " - is invalid url");
         }
 
         try {
@@ -49,23 +43,29 @@ public class Crawler {
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
-        }*/
+        }
 
     }
 
-    private static void getUrlContent(String url) throws IOException {
+    private static String getUrlContent(String url) throws IOException {
+        Pattern protocolPattern = Pattern.compile("http://|https://");
+        Matcher match = protocolPattern.matcher(url);
+
+        if(!match.find()) {
+            url = "http://" + url;
+        }
+
         Map<String, String> request = Crawler.sendGet(url);
-        System.out.println(request.get("responseCode"));
-        System.out.println(request.get("response"));
-        System.out.println(request.get("newLocation"));
+        if(request.get("newLocation") != null) {
+            return getUrlContent(request.get("newLocation"));
+        }
+
+        return request.get("response");
     }
 
     private static Map<String, String> sendGet(String url) throws IOException{
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-
-        // follow the url if is moved
-        con.setInstanceFollowRedirects(true);
 
         // optional default is GET
         con.setRequestMethod("GET");
