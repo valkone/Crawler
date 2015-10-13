@@ -1,8 +1,4 @@
-import com.sun.deploy.net.HttpResponse;
-import sun.net.www.http.HttpClient;
-
 import java.io.BufferedReader;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -22,8 +18,8 @@ import java.util.regex.Pattern;
 public class Crawler {
 
     private static final String USER_AGENT = "Mozilla/5.0";
-    private static Statement stmt = null;
-    private static ResultSet rs = null;
+    private static Statement stmt;
+    private static ResultSet rs;
 
     public static void craw(String url) throws IllegalArgumentException {
         Connection connection = Database.connection();
@@ -37,18 +33,25 @@ public class Crawler {
 
         try {
             Crawler.stmt = connection.createStatement();
-            String checkIfUrlIsCrawled = MessageFormat.format("SELECT COUNT(*) as row_count FROM" +
-                    " crawled_data WHERE url = '{0}'", match.group());
+            String checkIfUrlIsCrawled = "SELECT COUNT(*) as row_count FROM" +
+                    " crawled_data WHERE url = '"+ url +"'";
             rs = stmt.executeQuery(checkIfUrlIsCrawled);
 
-            if(rs.getInt("row_count") == 0) {
+            if(rs.next() && rs.getInt("row_count") == 0) {
                 String urlContent = getUrlContent(url);
-                String insertDataSql = MessageFormat.format("INSERT INTO crawled_data(content, url)" +
-                        "VALUES('{0}', '{1}')", urlContent, url);
-                // TODO: Insert data into database
+                urlContent = urlContent.replace("'", "&#39;");
+                String insertDataSql = "INSERT INTO crawled_data(content, url)" +
+                        "VALUES('" + urlContent + "', '" + url + "')";
+
+                stmt.executeUpdate(insertDataSql);
+                System.out.println("Inserted : " + url);
 
                 List<String> allUrls = getAllUrls(urlContent);
-                // TODO: recursive crawling all urls
+                allUrls.forEach(u -> {
+                    craw(u);
+                });
+            } else {
+                System.out.println("Skipped: "  + url);
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
