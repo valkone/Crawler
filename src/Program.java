@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.SQLException;
 import java.util.Map;
 
 public class Program {
@@ -17,7 +18,15 @@ public class Program {
             }
 
             Map<String, String> parsedInput = Engine.inputParser(input);
-            Engine.executeCommand(parsedInput);
+            try {
+                Engine.executeCommand(parsedInput);
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            } catch (IllegalArgumentException e) {
+                System.out.println(e.getMessage());
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 }

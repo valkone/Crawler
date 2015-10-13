@@ -10,17 +10,16 @@ public class Database {
     /**
      * @return Database connection
      */
-    public static Connection connection() {
+    public static Connection connection() throws SQLException{
         if(Database.connection == null) {
             String url = MessageFormat.format("jdbc:mysql://{0}:{1}/{2}", Settings.HOSTNAME, Settings.MYSQL_PORT, Settings.DATABASE_NAME);
             String username = Settings.DATABASE_USERNAME;
             String password = Settings.DATABASE_PASSWORD;
 
-            try (Connection connection = DriverManager.getConnection(url, username, password)) {
-                return connection;
-            } catch (SQLException e) {
-                throw new IllegalStateException("Cannot connect the database!", e);
-            }
+            Connection connection = DriverManager.getConnection(url, username, password);
+            Database.connection = connection;
+
+            return connection;
         } else {
             return connection;
         }

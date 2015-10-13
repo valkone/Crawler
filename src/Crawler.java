@@ -1,8 +1,4 @@
-import com.sun.deploy.net.HttpResponse;
-import sun.net.www.http.HttpClient;
-
 import java.io.BufferedReader;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -22,10 +18,11 @@ import java.util.regex.Pattern;
 public class Crawler {
 
     private static final String USER_AGENT = "Mozilla/5.0";
-    private static Statement stmt = null;
-    private static ResultSet rs = null;
+    private static Statement stmt;
+    private static ResultSet rs;
 
-    public static void craw(String url) throws IllegalArgumentException {
+    public static void craw(String url)
+            throws IllegalArgumentException, SQLException, IOException {
         Connection connection = Database.connection();
 
         Pattern pattern = Pattern.compile("((?!w+\\.)[a-zA-Z0-9-]+(\\.[a-z-A-Z0-9-]+)+.*)");
@@ -35,30 +32,30 @@ public class Crawler {
             throw new IllegalArgumentException(url + " - is invalid url");
         }
 
-        try {
-            Crawler.stmt = connection.createStatement();
-            String checkIfUrlIsCrawled = MessageFormat.format("SELECT COUNT(*) as row_count FROM" +
-                    " crawled_data WHERE url = '{0}'", match.group());
-            rs = stmt.executeQuery(checkIfUrlIsCrawled);
+        Crawler.stmt = connection.createStatement();
+        String checkIfUrlIsCrawled = "SELECT COUNT(*) as row_count FROM" +
+                " crawled_data WHERE url = '"+ url +"'";
+        rs = stmt.executeQuery(checkIfUrlIsCrawled);
 
-            if(rs.getInt("row_count") == 0) {
-                String urlContent = getUrlContent(url);
-                String insertDataSql = MessageFormat.format("INSERT INTO crawled_data(content, url)" +
-                        "VALUES('{0}', '{1}')", urlContent, url);
-                // TODO: Insert data into database
+        if(rs.next() && rs.getInt("row_count") == 0) {
+            String urlContent = getUrlContent(url);
+            urlContent = urlContent.replace("'", "&#39;");
+            String insertDataSql = "INSERT INTO crawled_data(content, url)" +
+                    "VALUES('" + urlContent + "', '" + url + "')";
 
-                List<String> allUrls = getAllUrls(urlContent);
-                // TODO: recursive crawling all urls
+            stmt.executeUpdate(insertDataSql);
+            System.out.println("Inserted : " + url);
+
+            List<String> allUrls = getAllUrls(urlContent);
+            for(String u : allUrls) {
+                Crawler.craw(u);
             }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
+        } else {
+            System.out.println("Skipped: "  + url);
         }
-
     }
 
-    private static List<String> getAllUrls(String content) {
+    public static List<String> getAllUrls(String content) {
         List<String> allUrls = new ArrayList<>();
 
         Pattern urlMatch = Pattern.compile("(href|src)=('|\")((http://|https://|www)(www)*[^'\"]+)");
@@ -86,7 +83,7 @@ public class Crawler {
         return request.get("response");
     }
 
-    private static Map<String, String> sendGet(String url) throws IOException{
+    private static Map<String, String> sendGet(String url) throws IOException {
         URL obj = new URL(url);
         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 

@@ -1,10 +1,10 @@
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class Engine {
-
     public static Map<String, String> inputParser(String input) {
         String[] lineSplit = input.split(" ");
         String command = lineSplit[0];
@@ -22,30 +22,21 @@ public class Engine {
         return result;
     }
 
-    public static void executeCommand(Map<String, String> input) {
+    public static void executeCommand(Map<String, String> input)
+            throws IllegalArgumentException, SQLException, IOException {
         switch (input.get("command")) {
             case "exit":
                 Program.isRunning = false;
                 break;
 
             case "crawl":
-                String[] parameters = parametersParser(input.get("parameters"));
-                try {
-                    Crawler.craw(parameters[0]);
-                } catch(IllegalArgumentException e) {
-                    System.out.println(e.getMessage());
-                }
+                String[] parameters = input.get("parameters").split(" ");
+                Crawler.craw(parameters[0]);
                 break;
 
             default:
                 System.out.println("Invalid command!");
                 break;
         }
-    }
-
-    private static String[] parametersParser(String parameters) {
-        String[] parsedParameters = parameters.split(" ");
-
-        return parsedParameters;
     }
 }
