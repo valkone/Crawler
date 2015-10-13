@@ -1,10 +1,10 @@
-import javax.xml.crypto.Data;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 
 public class Database {
+
     private static Connection connection = null;
 
     /**
@@ -16,16 +16,13 @@ public class Database {
             String username = Settings.DATABASE_USERNAME;
             String password = Settings.DATABASE_PASSWORD;
 
-            try {
-                Connection connection = DriverManager.getConnection(url, username, password);
-                Database.connection = connection;
-
+            try (Connection connection = DriverManager.getConnection(url, username, password)) {
                 return connection;
             } catch (SQLException e) {
                 throw new IllegalStateException("Cannot connect the database!", e);
             }
         } else {
-            return Database.connection;
+            return connection;
         }
     }
 }
